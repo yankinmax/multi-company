@@ -120,7 +120,7 @@ class PurchaseOrder(models.Model):
         )
         for purchase_line in self.order_line:
             sale_line_data = self._prepare_sale_order_line_data(
-                purchase_line, sale_order
+                purchase_line, dest_company, sale_order
             )
             self.env["sale.order.line"].with_user(intercompany_user.id).sudo().create(
                 sale_line_data
@@ -130,8 +130,8 @@ class PurchaseOrder(models.Model):
             self.partner_ref = sale_order.name
         # set ignore_exception=True to confirm the order
         # if sale_exception module is installed
-        if "ignore_exception" in self.env["sale.order"]:
-            sale_order.ignore_exception = True
+        # if "ignore_exception" in self.env["sale.order"]:
+        #     sale_order.ignore_exception = True
         # Validation of sale order
         if dest_company.sale_auto_validation:
             sale_order.with_user(intercompany_user.id).sudo().action_confirm()
@@ -173,10 +173,12 @@ class PurchaseOrder(models.Model):
         new_order.pricelist_id = pricelist
         return new_order._convert_to_write(new_order._cache)
 
-    def _prepare_sale_order_line_data(self, purchase_line, sale_order):
+    def _prepare_sale_order_line_data(self, purchase_line, dest_company, sale_order):
         """Generate the Sale Order Line values from the PO line
         :param purchase_line : the origin Purchase Order Line
         :rtype purchase_line : purchase.order.line record
+        :param dest_company : the company of the created SO
+        :rtype dest_company : res.company record
         :param sale_order : the Sale Order
         """
         new_line = self.env["sale.order.line"].new(
